@@ -7,7 +7,7 @@ else
 fi
 
 prog=${0##*/}
-progdir=${0%%/*}
+progdir=$(cd "${0%%/*}"; pwd)
 
 fail () {
     set +x
