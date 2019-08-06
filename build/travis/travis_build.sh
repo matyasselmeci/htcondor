@@ -31,6 +31,7 @@ else
     BUILD_TESTING=FALSE
 fi
 
+cat > "$progdir/env.sh" <<__END__
 export CMAKE_OPTIONS=(
     -DPROPER:BOOL=$PROPER
     -DCLIPPED:BOOL=$CLIPPED
@@ -102,7 +103,9 @@ export RHEL_DEPENDENCIES=(
     libstdc++-devel
     libstdc++-static
 )
-
+__END__
+trap 'rm -f "$progdir/env.sh"' ERR EXIT
+source "$progdir/env.sh"
 
 if [[ -z $DOCKER_IMAGE ]]; then
     cmake "${CMAKE_OPTIONS[@]}"
@@ -114,14 +117,7 @@ if [[ -z $DOCKER_IMAGE ]]; then
         make -j2
 else
     touch bld_external_rhel bld_external
-    sudo docker run --rm=true -w "`pwd`" -v "`pwd`:`pwd`" $DOCKER_IMAGE /bin/bash -x -c "
-        mv bld_external bld_external_ubuntu
-        mv bld_external_rhel bld_external
-        yum -y install epel-release
-        yum -y install ${RHEL_DEPENDENCIES[@]}
-        yum -y install python36-devel boost169-devel boost169-static
-        cmake ${CMAKE_OPTIONS[@]}
-    "
+    sudo docker run --rm=true -w "`pwd`" -v "`pwd`:`pwd`" $DOCKER_IMAGE /bin/bash -x "$progdir/build_inside_docker.sh"
 fi
 
 # vim:et:sw=4:sts=4:ts=8
